@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for perfume recommender
+  postgres:
+    image: postgres:16-alpine
+    container_name: perfume-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      # Database credentials (for local development only)
+      POSTGRES_USER: perfume_user
+      POSTGRES_PASSWORD: perfume_dev_password
+      POSTGRES_DB: perfume_recommender
+    volumes:
+      # Persist data even when container stops
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perfume_user -d perfume_recommender"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Named volume for data persistence
+volumes:
+  postgres_data:

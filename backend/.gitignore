@@ -17,3 +17,4 @@ dist/
 # Logs
 *.log
 npm-debug.log*
+/src/generated/prisma

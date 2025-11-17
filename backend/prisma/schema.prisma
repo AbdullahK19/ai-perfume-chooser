@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTH & USER MODELS
+// ============================================
+
+model User {
+  id         String   @id @default(uuid())
+  emailHash  String   @unique @db.VarChar(64)
+  phoneHash  String   @db.VarChar(64)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  loginCodes LoginCode[]
+  usageEvents UsageEvent[]
+
+  @@map("users")
+}
+
+model LoginCode {
+  id         String   @id @default(uuid())
+  userId     String
+  code       String   @db.VarChar(6)
+  expiresAt  DateTime
+  consumed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code, expiresAt])
+  @@map("login_codes")
+}
+
+model UsageEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  eventType  String   @db.VarChar(50)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([eventType])
+  @@map("usage_events")
+}
+
+// ============================================
+// PERFUME & NOTE MODELS
+// ============================================
+
+model Perfume {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(255)
+  brand           String   @db.VarChar(255)
+  genderMarketing String   @db.VarChar(50)  // masculine, feminine, unisex
+  priceTier       String   @db.VarChar(50)  // budget, mid, niche
+  approximatePrice Float?                   // Optional: approximate price in USD
+  releaseYear     Int?                      // Optional: year released
+  concentration   String?  @db.VarChar(50)  // EDT, EDP, Parfum, etc.
+  intensityTag    String   @db.VarChar(50)  // soft, moderate, strong, beast-mode
+  seasonTags      String[] @db.VarChar(50)  // Array: ["summer", "winter-night"]
+  climateTags     String[] @db.VarChar(50)  // Array: ["hot", "mild", "cold"]
+  sourceId        String?  @db.VarChar(255) // Original ID from Kaggle/Fragrantica dataset
+  createdAt       DateTime @default(now())
+
+  // Relations
+  perfumeNotes    PerfumeNote[]
+
+  @@index([brand])
+  @@index([priceTier])
+  @@index([intensityTag])
+  @@map("perfumes")
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)  // e.g., "bergamot", "lavender"
+  noteFamily  String   @db.VarChar(50)           // citrus, floral, woody, amber, spicy
+  createdAt   DateTime @default(now())
+
+  // Relations
+  perfumeNotes PerfumeNote[]
+
+  @@index([noteFamily])
+  @@map("notes")
+}
+
+model PerfumeNote {
+  id         String   @id @default(uuid())
+  perfumeId  String
+  noteId     String
+  noteLevel  String   @db.VarChar(20)  // "top", "heart", "base"
+  createdAt  DateTime @default(now())
+
+  // Relations
+  perfume    Perfume  @relation(fields: [perfumeId], references: [id], onDelete: Cascade)
+  note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([perfumeId, noteId])  // A perfume can't have the same note twice
+  @@index([perfumeId])
+  @@index([noteId])
+  @@index([noteLevel])
+  @@map("perfume_notes")
+}
