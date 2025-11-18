@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -28,6 +30,9 @@ app.use(cors({
 // Without this, req.body would be undefined when frontend sends JSON data
 app.use(express.json());
 
+// 3. Cookie parser - allows reading and setting cookies
+app.use(cookieParser());
+
 /**
  * ROUTES
  *
@@ -50,6 +55,9 @@ app.get('/api/hello', (req: Request, res: Response) => {
     receivedAt: new Date().toISOString()
   });
 });
+
+// Auth routes - handles signup, login, and verification
+app.use('/api/auth', authRoutes);
 
 /**
  * START THE SERVER

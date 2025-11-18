@@ -18,3 +18,4 @@ dist/
 *.log
 npm-debug.log*
 /src/generated/prisma
+cookies.txt
